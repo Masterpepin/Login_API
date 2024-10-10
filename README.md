@@ -15,3 +15,5 @@ Requirements in your computer for this API to work:
     -```exit```
   - 3: run ```sudo docker-compose exec web alembic revision --autogenerate -m "Create users table"``` to create the users table
 - 4: Once you have it up and running you should be able to search "http://localhost:8000/user/"
+
+If you need to turn off your docker... dont worry! the next time you run it with ```docker-compose up --build```  you wont need to do the next steps metioned here.
