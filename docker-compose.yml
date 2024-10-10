@@ -6,13 +6,21 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: postgres
     ports:
-      - "5432:5432"  # Asegúrate de que este puerto esté expuesto
+      - "5432:5432"  
 
   web:
     build: .
     ports:
       - "8000:8000"
     depends_on:
-      - db  # Asegúrate de que este contenedor dependa del de la base de datos
+      - db  #
     environment:
       - PYTHONPATH=/app
+
+  frontend:
+    build:
+      context: ./frontend 
+    ports:
+      - "3000:3000" 
+    depends_on:
+      - web
