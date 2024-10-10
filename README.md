@@ -4,7 +4,7 @@
 Requirements in your computer for this API to work:
 - Git
 - Docker
-Steps:
+- Steps:
 - 1: clone this repo ```git clone ```
 - 2: Move to the repo ```cd```
 - 3: Make sure inside it you have access to docker-compose.yml and run ```docker-compose up --build```
