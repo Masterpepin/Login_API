@@ -1,14 +1,25 @@
 # app/main.py
 
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware  # Importa el middleware de CORS
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User as UserModel  # Importa el modelo de SQLAlchemy
-from app.schemas import UserCreate, User  # Importa los esquemas de Pydantic
+from app.models import User as UserModel
+from app.schemas import UserCreate, User
 from app.crud import create_user, get_user, update_user, delete_user
 
 app = FastAPI()
 
+# Middleware de CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite todas las orígenes. Cambia "*" por tus dominios si lo prefieres.
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos los métodos HTTP (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Permite todos los encabezados
+)
+
+# Endpoints de la API
 @app.post("/users/", response_model=User)
 def create_user_endpoint(user: UserCreate, db: Session = Depends(get_db)):
     user_model = UserModel(**user.dict())  # Convierte el esquema a un modelo de SQLAlchemy

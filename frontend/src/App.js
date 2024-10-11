@@ -1,142 +1,198 @@
 import React, { useState } from 'react';
-import './App.css';  // Importa el archivo CSS
+import axios from 'axios';
 
 const App = () => {
-  const [selectedOption, setSelectedOption] = useState(''); // Opción seleccionada del menú
-  const [searchUsername, setSearchUsername] = useState(''); // Para buscar un usuario
-  const [newUser, setNewUser] = useState({ username: '', email: '', password: '' }); // Para crear un usuario
-  const [updateUser, setUpdateUser] = useState({ id: '', username: '', email: '', password: '' }); // Para actualizar un usuario
-  const [deleteUsername, setDeleteUsername] = useState(''); // Para borrar un usuario
-  const handleOptionChange = (e) => {
-    setSelectedOption(e.target.value);  // Cambiar la opción seleccionada
-  };
+  const [users, setUsers] = useState([]);
+  const [selectedOption, setSelectedOption] = useState(''); // Para el menú desplegable
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [userId, setUserId] = useState('');
+  const [userInfo, setUserInfo] = useState(null); // Para mostrar la información del usuario
+  const [message, setMessage] = useState(''); // Para mensajes de éxito o error
+
+  // Función para manejar la creación de un usuario
+const handleCreateUser = () => {
+  axios.post('http://localhost:8000/users', {
+    username,
+    email,
+    hashed_password: password
+  })
+  .then(response => {
+    // Aquí actualizamos los usuarios después de la creación
+    setUsers([...users, response.data]);
+    setMessage('Usuario creado exitosamente');
+    setUsername('');
+    setEmail('');
+    setPassword('');
+  })
+  .catch(error => {
+    setMessage('Error creando usuario');
+    console.error(error);
+  });
+};
+
+
+  // Función para obtener un usuario por ID
+const handleGetUser = () => {
+  axios.get(`http://localhost:8000/users/${userId}`)
+  .then(response => {
+    setUserInfo(response.data); // Aquí aseguramos que los datos se reflejen
+    setMessage('');
+  })
+  .catch(error => {
+    setMessage('Usuario no encontrado');
+    setUserInfo(null); // Asegúrate de limpiar la vista cuando no se encuentre el usuario
+    console.error(error);
+  });
+}
+
+// Función para actualizar un usuario por ID
+const handleUpdateUser = () => {
+  axios.put(`http://localhost:8000/users/${userId}`, {
+    username,
+    email,
+    hashed_password: password
+  })
+  .then(response => {
+    // Actualizamos el usuario en la lista local
+    setUsers(users.map(user => (user.id === userId ? response.data : user)));
+    setMessage('Usuario actualizado exitosamente');
+    setUserId('');
+    setUsername('');
+    setEmail('');
+    setPassword('');
+  })
+  .catch(error => {
+    setMessage('Error actualizando usuario');
+    console.error(error);
+  });
+};
+
+
+// Función para borrar un usuario por ID
+const handleDeleteUser = () => {
+  axios.delete(`http://localhost:8000/users/${userId}`)
+    .then(response => {
+      console.log(response);  // Opcional: Para verificar la respuesta
+      // Eliminamos el usuario de la lista local
+      setUsers(users.filter(user => user.id !== parseInt(userId)));
+      setMessage('Usuario borrado exitosamente');
+      setUserId('');
+    })
+    .catch(error => {
+      setMessage('Error borrando usuario');
+      console.error(error);
+    });
+};
+
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <h1>Gestión de Usuarios</h1>
-      </header>
+    <div>
+      <h1>Gestión de Usuarios</h1>
+      
+      {/* Menú desplegable */}
+      <select value={selectedOption} onChange={(e) => setSelectedOption(e.target.value)}>
+        <option value="">Selecciona una opción</option>
+        <option value="create">Crear usuario</option>
+        <option value="get">Buscar usuario</option>
+        <option value="update">Actualizar usuario</option>
+        <option value="delete">Borrar usuario</option>
+      </select>
 
-      <main className="app-main">
-        {/* Menú desplegable para seleccionar una acción */}
-        <div className="menu-section">
-          <h2>Selecciona una opción</h2>
-          <select className="dropdown" value={selectedOption} onChange={handleOptionChange}>
-            <option value="">-- Selecciona --</option>
-            <option value="create">Crear un nuevo usuario</option>
-            <option value="search">Buscar un usuario</option>
-            <option value="update">Actualizar un usuario</option>
-            <option value="delete">Borrar un usuario</option>
-          </select>
+      {/* Formulario dinámico según la opción seleccionada */}
+      {selectedOption === 'create' && (
+        <div>
+          <h2>Crear un nuevo usuario</h2>
+          <input 
+            type="text" 
+            placeholder="Nombre de usuario" 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+          />
+          <input 
+            type="email" 
+            placeholder="Correo electrónico" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+          />
+          <input 
+            type="password" 
+            placeholder="Contraseña" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+          />
+          <button onClick={handleCreateUser}>Crear Usuario</button>
         </div>
+      )}
 
-        {/* Formulario para crear un nuevo usuario */}
-        {selectedOption === 'create' && (
-          <div className="form-section">
-            <h2>Crear Usuario</h2>
-            <form onSubmit={(e) => { e.preventDefault(); /* Lógica de creación */ }}>
-              <input
-                className="input"
-                type="text"
-                value={newUser.username}
-                onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                placeholder="Nombre de usuario"
-              />
-              <input
-                className="input"
-                type="email"
-                value={newUser.email}
-                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                placeholder="Correo electrónico"
-              />
-              <input
-                className="input"
-                type="password"
-                value={newUser.password}
-                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                placeholder="Contraseña"
-              />
-              <button className="btn" type="submit">Crear Usuario</button>
-            </form>
-          </div>
-        )}
+      {selectedOption === 'get' && (
+        <div>
+          <h2>Buscar usuario</h2>
+          <input 
+            type="text" 
+            placeholder="ID del usuario" 
+            value={userId} 
+            onChange={(e) => setUserId(e.target.value)} 
+          />
+          <button onClick={handleGetUser}>Buscar Usuario</button>
+          {userInfo && (
+            <div>
+              <h3>Información del Usuario</h3>
+              <p>Nombre: {userInfo.username}</p>
+              <p>Email: {userInfo.email}</p>
+              <p>ID: {userInfo.id}</p>
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* Formulario para buscar un usuario */}
-        {selectedOption === 'search' && (
-          <div className="form-section">
-            <h2>Buscar Usuario</h2>
-            <form onSubmit={(e) => { e.preventDefault(); /* Lógica de búsqueda */ }}>
-              <input
-                className="input"
-                type="text"
-                value={searchUsername}
-                onChange={(e) => setSearchUsername(e.target.value)}
-                placeholder="Nombre de usuario"
-              />
-              <button className="btn" type="submit">Buscar</button>
-            </form>
-          </div>
-        )}
+      {selectedOption === 'update' && (
+        <div>
+          <h2>Actualizar usuario</h2>
+          <input 
+            type="text" 
+            placeholder="ID del usuario" 
+            value={userId} 
+            onChange={(e) => setUserId(e.target.value)} 
+          />
+          <input 
+            type="text" 
+            placeholder="Nuevo nombre de usuario" 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+          />
+          <input 
+            type="email" 
+            placeholder="Nuevo correo electrónico" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+          />
+          <input 
+            type="password" 
+            placeholder="Nueva contraseña" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+          />
+          <button onClick={handleUpdateUser}>Actualizar Usuario</button>
+        </div>
+      )}
 
-        {/* Formulario para actualizar un usuario */}
-        {selectedOption === 'update' && (
-          <div className="form-section">
-            <h2>Actualizar Usuario</h2>
-            <form onSubmit={(e) => { e.preventDefault(); /* Lógica de actualización */ }}>
-              <input
-                className="input"
-                type="text"
-                value={updateUser.id}
-                onChange={(e) => setUpdateUser({ ...updateUser, id: e.target.value })}
-                placeholder="ID del usuario"
-              />
-              <input
-                className="input"
-                type="text"
-                value={updateUser.username}
-                onChange={(e) => setUpdateUser({ ...updateUser, username: e.target.value })}
-                placeholder="Nuevo nombre de usuario"
-              />
-              <input
-                className="input"
-                type="email"
-                value={updateUser.email}
-                onChange={(e) => setUpdateUser({ ...updateUser, email: e.target.value })}
-                placeholder="Nuevo correo electrónico"
-              />
-              <input
-                className="input"
-                type="password"
-                value={updateUser.password}
-                onChange={(e) => setUpdateUser({ ...updateUser, password: e.target.value })}
-                placeholder="Nueva contraseña"
-              />
-              <button className="btn" type="submit">Actualizar Usuario</button>
-            </form>
-          </div>
-        )}
+      {selectedOption === 'delete' && (
+        <div>
+          <h2>Borrar usuario</h2>
+          <input 
+            type="text" 
+            placeholder="ID del usuario" 
+            value={userId} 
+            onChange={(e) => setUserId(e.target.value)} 
+          />
+          <button onClick={handleDeleteUser}>Borrar Usuario</button>
+        </div>
+      )}
 
-        {/* Formulario para borrar un usuario */}
-        {selectedOption === 'delete' && (
-          <div className="form-section">
-            <h2>Borrar Usuario</h2>
-            <form onSubmit={(e) => { e.preventDefault(); /* Lógica de borrado */ }}>
-              <input
-                className="input"
-                type="text"
-                value={deleteUsername}
-                onChange={(e) => setDeleteUsername(e.target.value)}
-                placeholder="Nombre de usuario"
-              />
-              <button className="btn delete-btn" type="submit">Borrar Usuario</button>
-            </form>
-          </div>
-        )}
-      </main>
-
-      <footer className="app-footer">
-        <p>&copy; 2024 Aplicación de Gestión de Usuarios</p>
-      </footer>
+      {/* Mensaje de éxito o error */}
+      {message && <p>{message}</p>}
     </div>
   );
 };
